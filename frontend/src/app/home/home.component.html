@@ -1,0 +1,61 @@
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h1 class="text-white">
+      <i class="fas fa-graduation-cap me-3"></i>
+      Exam Generator System
+    </h1>
+    <p class="text-white">DSA Final Project</p>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-body text-center">
+          <h2 class="mb-4">Day 1 Setup Complete ✅</h2>
+          
+          <div class="alert alert-info">
+            <h5>Backend Status</h5>
+            <button class="btn btn-primary mt-2" (click)="checkBackend()">
+              Test Backend Connection
+            </button>
+            <div *ngIf="backendStatus" class="mt-2">
+              {{backendStatus}}
+            </div>
+          </div>
+
+          <div class="row mt-4">
+            <div class="col-md-6">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <h5>Next Steps</h5>
+                  <ul class="text-start mt-3">
+                    <li>Day 2: Authentication</li>
+                    <li>Day 3: Teacher Dashboard</li>
+                    <li>Day 4: Student Dashboard</li>
+                    <li>Day 5: DSA Implementation</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <h5>Navigation</h5>
+                  <div class="mt-3">
+                    <a routerLink="/login" class="btn btn-primary me-2">
+                      <i class="fas fa-sign-in-alt me-2" [routerLink]="'/login'"></i>Login
+                    </a>
+                    <a routerLink="/signup" class="btn btn-success">
+                      <i class="fas fa-user-plus me-2" [routerLink]="'/signup'"></i>Signup
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
