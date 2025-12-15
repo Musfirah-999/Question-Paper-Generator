@@ -1,39 +1,54 @@
 // backend/src/server.ts
 import express from 'express';
 import cors from 'cors';
-import { Request, Response } from 'express';
+import dotenv from 'dotenv';
 
-// Import routes (baad mein banayenge)
-// import examRoutes from './routes/examRoutes';
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());  // Important: Angular connect karne ke liye
-app.use(express.json());  // JSON data handle karne ke liye
+app.use(cors());
+app.use(express.json());
 
-// Basic route to test
-app.get('/', (req: Request, res: Response) => {
+// Test route
+app.get('/', (req, res) => {
     res.json({ 
-        message: 'Exam Generator Backend is running!',
-        status: 'OK'
+        message: '🎉 Exam Generator Backend is running successfully!',
+        status: 'OK',
+        timestamp: new Date().toISOString()
     });
 });
 
-// Health check route
-app.get('/health', (req: Request, res: Response) => {
-    res.json({ status: 'Server is healthy' });
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'Healthy',
+        database: 'MySQL (to be connected)',
+        server: 'Running on port ' + PORT
+    });
+});
+
+// Handle 404
+app.use('*', (req, res) => {
+    res.status(404).json({ error: 'Route not found' });
 });
 
 // Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: Function) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Internal server error' });
 });
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`✅ Health check: http://localhost:${PORT}/health`);
+    console.log('='.repeat(50));
+    console.log('🚀 EXAM GENERATOR BACKEND STARTED SUCCESSFULLY');
+    console.log('='.repeat(50));
+    console.log(`📡 Server URL: http://localhost:${PORT}`);
+    console.log(`🔍 Health Check: http://localhost:${PORT}/health`);
+    console.log(`🕒 Started at: ${new Date().toLocaleTimeString()}`);
+    console.log('='.repeat(50));
 });
