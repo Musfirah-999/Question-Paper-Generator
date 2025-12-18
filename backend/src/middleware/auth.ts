@@ -1,57 +1,73 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { verifyToken, getTokenFromHeader } from '../utils/authUtils';
 
-// Extend Request type to include user
 export interface AuthRequest extends Request {
     user?: any;
 }
 
 export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        // Get token from header
-        const authHeader = req.header('Authorization');
+        const token = getTokenFromHeader(req);
         
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        if (!token) {
             return res.status(401).json({ 
                 success: false, 
                 error: 'Access denied. No token provided.' 
             });
         }
 
-        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        const decoded = verifyToken(token);
         
-        // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-        
-        // Add user to request
+        if (!decoded) {
+            return res.status(401).json({ 
+                success: false, 
+                error: 'Invalid or expired token.' 
+            });
+        }
+
+        // Attach user to request
         req.user = decoded;
-        
         next();
-    } catch (error) {
-        return res.status(401).json({ 
+        
+    } catch (error: any) {
+        console.error('Auth middleware error:', error);
+        return res.status(500).json({ 
             success: false, 
-            error: 'Invalid token' 
+            error: 'Authentication error.' 
         });
     }
 };
 
-// Role-based middleware
-export const teacherMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (req.user?.role !== 'teacher') {
-        return res.status(403).json({ 
-            success: false, 
-            error: 'Access denied. Teacher role required.' 
-        });
-    }
-    next();
+export const roleMiddleware = (allowedRoles: string[]) => {
+    return (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            if (!req.user) {
+                return res.status(401).json({ 
+                    success: false, 
+                    error: 'User not authenticated.' 
+                });
+            }
+
+            if (!allowedRoles.includes(req.user.role)) {
+                return res.status(403).json({ 
+                    success: false, 
+                    error: `Access denied. Required roles: ${allowedRoles.join(', ')}` 
+                });
+            }
+
+            next();
+        } catch (error) {
+            console.error('Role middleware error:', error);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Authorization error.' 
+            });
+        }
+    };
 };
 
-export const studentMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (req.user?.role !== 'student') {
-        return res.status(403).json({ 
-            success: false, 
-            error: 'Access denied. Student role required.' 
-        });
-    }
-    next();
-};
+// Optional: Teacher only middleware
+export const teacherMiddleware = roleMiddleware(['teacher']);
+
+// Optional: Student only middleware
+export const studentMiddleware = roleMiddleware(['student']);

@@ -1,192 +1,230 @@
 import express from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import db from '../config/database';
-import { validateSignupData } from '../utils/validators';
+import { 
+    hashPassword, 
+    comparePassword, 
+    generateToken, 
+    isValidEmail, 
+    validatePassword 
+} from '../utils/authUtils';
+import { authMiddleware } from '../middleware/auth';
 
 const router = express.Router();
 
-// SIGNUP - Create new user
+// User Signup
 router.post('/signup', async (req, res) => {
     try {
         const { email, password, role } = req.body;
-        
-        // Validate input
-        const validation = validateSignupData(req.body);
-        if (!validation.valid) {
-            return res.status(400).json({ 
-                success: false, 
-                errors: validation.errors 
+
+        // Validation
+        if (!email || !password || !role) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide email, password, and role.'
             });
         }
-        
+
+        if (!isValidEmail(email)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide a valid email address.'
+            });
+        }
+
+        if (!['teacher', 'student'].includes(role)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Role must be either "teacher" or "student".'
+            });
+        }
+
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.valid) {
+            return res.status(400).json({
+                success: false,
+                error: passwordValidation.message
+            });
+        }
+
         // Check if user already exists
         const [existingUsers]: any = await db.execute(
             'SELECT id FROM users WHERE email = ?',
             [email]
         );
-        
+
         if (existingUsers.length > 0) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'User with this email already exists' 
+            return res.status(400).json({
+                success: false,
+                error: 'User with this email already exists.'
             });
         }
-        
+
         // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        
-        // Insert new user
+        const hashedPassword = await hashPassword(password);
+
+        // Create user
         const [result]: any = await db.execute(
             'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
             [email, hashedPassword, role]
         );
-        
-        // Generate JWT token
-        const token = jwt.sign(
-            { 
-                id: result.insertId, 
-                email, 
-                role 
-            },
-            process.env.JWT_SECRET || 'secret',
-            { expiresIn: '7d' }
-        );
-        
-        res.status(201).json({
+
+        // Generate token
+        const token = generateToken(result.insertId, email, role);
+
+        // Prepare response
+        const response = {
             success: true,
-            message: 'User registered successfully',
+            message: 'User created successfully.',
             data: {
-                token,
                 user: {
                     id: result.insertId,
                     email,
                     role
-                }
+                },
+                token,
+                token_type: 'Bearer',
+                expires_in: '7 days'
             }
-        });
-        
-    } catch (error) {
+        };
+
+        res.status(201).json(response);
+
+    } catch (error: any) {
         console.error('Signup error:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Server error during registration' 
+        
+        // Handle specific errors
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({
+                success: false,
+                error: 'Email already exists.'
+            });
+        }
+        
+        res.status(500).json({
+            success: false,
+            error: 'Server error. Please try again later.',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
 
-// LOGIN - Authenticate user
+// User Login
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        
-        // Basic validation
+
+        // Validation
         if (!email || !password) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Email and password are required' 
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide email and password.'
             });
         }
-        
+
+        if (!isValidEmail(email)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please provide a valid email address.'
+            });
+        }
+
         // Find user
         const [users]: any = await db.execute(
             'SELECT * FROM users WHERE email = ?',
             [email]
         );
-        
+
         if (users.length === 0) {
-            return res.status(401).json({ 
-                success: false, 
-                error: 'Invalid email or password' 
+            return res.status(401).json({
+                success: false,
+                error: 'Invalid email or password.'
             });
         }
-        
+
         const user = users[0];
-        
-        // Verify password
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) {
-            return res.status(401).json({ 
-                success: false, 
-                error: 'Invalid email or password' 
+
+        // Check password
+        const isValidPassword = await comparePassword(password, user.password);
+        if (!isValidPassword) {
+            return res.status(401).json({
+                success: false,
+                error: 'Invalid email or password.'
             });
         }
-        
-        // Generate JWT token
-        const token = jwt.sign(
-            { 
-                id: user.id, 
-                email: user.email, 
-                role: user.role 
-            },
-            process.env.JWT_SECRET || 'secret',
-            { expiresIn: '7d' }
-        );
-        
-        res.json({
+
+        // Generate token
+        const token = generateToken(user.id, user.email, user.role);
+
+        // Prepare response
+        const response = {
             success: true,
-            message: 'Login successful',
+            message: 'Login successful.',
             data: {
-                token,
                 user: {
                     id: user.id,
                     email: user.email,
                     role: user.role,
                     created_at: user.created_at
-                }
+                },
+                token,
+                token_type: 'Bearer',
+                expires_in: '7 days'
             }
-        });
-        
-    } catch (error) {
+        };
+
+        res.json(response);
+
+    } catch (error: any) {
         console.error('Login error:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Server error during login' 
+        res.status(500).json({
+            success: false,
+            error: 'Server error. Please try again later.'
         });
     }
 });
 
-// GET CURRENT USER - Protected route
-router.get('/me', async (req, res) => {
+// Get current user (protected route)
+router.get('/me', authMiddleware, async (req: any, res) => {
     try {
-        // This route will be protected by auth middleware
-        const token = req.header('Authorization')?.replace('Bearer ', '');
+        const userId = req.user.id;
         
-        if (!token) {
-            return res.status(401).json({ 
-                success: false, 
-                error: 'No token provided' 
-            });
-        }
-        
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-        
-        // Get user from database
         const [users]: any = await db.execute(
             'SELECT id, email, role, created_at FROM users WHERE id = ?',
-            [decoded.id]
+            [userId]
         );
-        
+
         if (users.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'User not found' 
+            return res.status(404).json({
+                success: false,
+                error: 'User not found.'
             });
         }
-        
+
+        const user = users[0];
+
         res.json({
             success: true,
-            data: users[0]
+            data: {
+                user
+            }
         });
-        
-    } catch (error) {
+
+    } catch (error: any) {
         console.error('Get user error:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Server error' 
+        res.status(500).json({
+            success: false,
+            error: 'Server error.'
         });
     }
+});
+
+// Test protected route
+router.get('/test-protected', authMiddleware, (req: any, res) => {
+    res.json({
+        success: true,
+        message: 'Access granted to protected route.',
+        user: req.user
+    });
 });
 
 export default router;
