@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Quiz Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome/Setup Page -->
+        <div class="welcome-page" id="welcomePage">
+            <div class="page-header">
+                <h1><i class="fas fa-graduation-cap"></i> Advanced Quiz Generator</h1>
+                <p>Test your knowledge across multiple subjects with our comprehensive quiz platform. Select your subject and topics to begin.</p>
+            </div>
+            
+            <div class="setup-section">
+                <h2 class="section-title"><i class="fas fa-cogs"></i> Quiz Setup</h2>
+                
+                <div class="subjects-container">
+                    <h3>Select Subject</h3>
+                    <select class="subject-dropdown" id="subjectDropdown">
+                        <option value="">-- Choose a Subject --</option>
+                        <option value="discrete-maths">Discrete Mathematics</option>
+                        <option value="database">Database Management</option>
+                        <option value="dsa">Data Structures & Algorithms</option>
+                        <option value="oop">Object-Oriented Programming</option>
+                        <option value="computer-networks">Computer Networks</option>
+                    </select>
+                </div>
+                
+                <div class="topics-container" id="topicsContainer">
+                    <h3>Select Topics & Subtopics</h3>
+                    <div class="topics-grid" id="topicsGrid">
+                        <!-- Topics will be loaded here dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h2 class="section-title"><i class="fas fa-info-circle"></i> Quiz Information</h2>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <i class="fas fa-question-circle"></i>
+                        <h3>500+ Questions</h3>
+                        <p>Comprehensive question bank covering all topics</p>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-clock"></i>
+                        <h3>Timer Based</h3>
+                        <p>15 minutes to complete each quiz</p>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-random"></i>
+                        <h3>Random Selection</h3>
+                        <p>15 unique questions from chosen topics</p>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-chart-bar"></i>
+                        <h3>Detailed Results</h3>
+                        <p>Get comprehensive performance analysis</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="instructions-container" id="instructionsContainer">
+                <h2 class="section-title"><i class="fas fa-book"></i> Quiz Instructions</h2>
+                <ul class="instructions-list">
+                    <li>Select a subject from the dropdown menu</li>
+                    <li>Choose the topics and subtopics you want to be quizzed on</li>
+                    <li>Each quiz contains 15 randomly selected questions</li>
+                    <li>You have 15 minutes to complete the quiz</li>
+                    <li>Once you answer a question and move to another, your answer is locked</li>
+                    <li>You can skip questions and return to them later</li>
+                    <li>Use the question indicators at the bottom to navigate</li>
+                    <li>Submit your quiz when finished or when time runs out</li>
+                    <li>Review your detailed results at the end</li>
+                </ul>
+            </div>
+            
+            <button class="instructions-toggle" id="instructionsToggle">
+                <i class="fas fa-book-open"></i> Show Instructions
+            </button>
+            
+            <button class="start-quiz-btn" id="startQuizBtn" disabled>
+                <i class="fas fa-play-circle"></i> Start Quiz
+            </button>
+        </div>
+        
+        <!-- Quiz Page -->
+        <div class="quiz-page" id="quizPage">
+            <div class="quiz-header">
+                <div class="quiz-title">
+                    <i class="fas fa-code"></i>
+                    <span id="quizSubject">Subject Name</span>
+                </div>
+                <div class="timer-container" id="timerContainer">
+                    <i class="fas fa-clock"></i>
+                    <span id="timer">15:00</span>
+                </div>
+            </div>
+            
+            <div class="quiz-content">
+                <div class="question-nav">
+                    <div class="question-counter">
+                        Question <span id="currentQuestionNum">1</span> of <span id="totalQuestions">15</span>
+                    </div>
+                    <div class="nav-buttons">
+                        <button class="nav-btn" id="prevBtn" disabled>
+                            <i class="fas fa-arrow-left"></i> Previous
+                        </button>
+                        <button class="nav-btn" id="nextBtn">
+                            Next <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="question-container">
+                    <div class="question-text" id="questionText">
+                        <!-- Question will be loaded here -->
+                    </div>
+                    
+                    <div class="options-grid" id="optionsContainer">
+                        <!-- Options will be loaded here -->
+                    </div>
+                    
+                    <div class="question-footer">
+                        <button class="skip-btn" id="skipBtn">
+                            <i class="fas fa-forward"></i> Skip Question
+                        </button>
+                        <button class="submit-quiz-btn" id="submitQuizBtn">
+                            <i class="fas fa-paper-plane"></i> Submit Quiz
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="questions-footer">
+                <div class="questions-grid" id="questionsGrid">
+                    <!-- Question indicators will be loaded here -->
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #95a5a6;"></div>
+                        <span>Not Visited</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3498db;"></div>
+                        <span>Visited</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3498db; opacity: 0.7;"></div>
+                        <span>Skipped</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #2c3e50;"></div>
+                        <span>Answered & Locked</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #e74c3c;"></div>
+                        <span>Current Question</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Page -->
+        <div class="results-page" id="resultsPage">
+            <div class="results-header">
+                <h2>Quiz Results</h2>
+                <p>Your performance analysis</p>
+            </div>
+            
+            <div class="score-container">
+                <div class="score-circle">
+                    <div class="score-value" id="scoreValue">0</div>
+                    <div class="score-label">Your Score</div>
+                </div>
+            </div>
+            
+            <div class="results-details">
+                <div class="result-card">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>Correct Answers</h3>
+                    <p id="correctAnswers">0</p>
+                </div>
+                
+                <div class="result-card">
+                    <i class="fas fa-times-circle"></i>
+                    <h3>Incorrect Answers</h3>
+                    <p id="incorrectAnswers">0</p>
+                </div>
+                
+                <div class="result-card">
+                    <i class="fas fa-clock"></i>
+                    <h3>Time Taken</h3>
+                    <p id="timeTaken">0:00</p>
+                </div>
+                
+                <div class="result-card">
+                    <i class="fas fa-percentage"></i>
+                    <h3>Accuracy</h3>
+                    <p id="accuracy">0%</p>
+                </div>
+                
+                <div class="result-card">
+                    <i class="fas fa-star"></i>
+                    <h3>Rank</h3>
+                    <p id="rank">Beginner</p>
+                </div>
+            </div>
+            
+            <div class="results-actions">
+                <button class="action-btn restart-btn" id="restartBtn">
+                    <i class="fas fa-redo"></i> Restart Same Quiz
+                </button>
+                <button class="action-btn new-quiz-btn" id="newQuizBtn">
+                    <i class="fas fa-plus-circle"></i> New Quiz
+                </button>
+                <button class="action-btn review-btn" id="reviewBtn">
+                    <i class="fas fa-eye"></i> Review Answers
+                </button>
+            </div>
+        </div>
+
+        <!-- Review Page -->
+        <div class="review-page" id="reviewPage">
+            <div class="review-header">
+                <h2><i class="fas fa-eye"></i> Quiz Review</h2>
+                <button class="back-to-results-btn" id="backToResultsBtn">
+                    <i class="fas fa-arrow-left"></i> Back to Results
+                </button>
+            </div>
+            
+            <div class="review-content" id="reviewContent">
+                <!-- Review content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="quiz-data.js"></script>
+    <script src="quiz-app.js"></script>
+</body>
+</html>
